@@ -1,21 +1,26 @@
+const { makeExecutableSchema } = require("@graphql-tools/schema");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
-const bodyParser = require("body-parser");
-const cors = require("cors");
 const typeDefs = require("./schema");
 const resolvers = require("./resolvers");
+const authMiddleware = require("../middlewares/auth");
+const cors = require("cors");
+const bodyParser = require("body-parser");
 
-async function createGraphQLServer(app) {
-	const server = new ApolloServer({
+const createGraphQLServer = async (app) => {
+	const schema = makeExecutableSchema({
 		typeDefs,
 		resolvers,
-		context: async ({ req, res }) => {
-			return { req, res };
-		},
+	});
+
+	const schemaWithMiddleware = authMiddleware(schema);
+
+	const server = new ApolloServer({
+		schema: schemaWithMiddleware,
+		context: ({ req }) => ({ req }),
 	});
 
 	await server.start();
-
 	app.use(
 		"/graphql",
 		cors({
@@ -26,6 +31,6 @@ async function createGraphQLServer(app) {
 			context: async ({ req, res }) => ({ req, res }),
 		})
 	);
-}
+};
 
 module.exports = createGraphQLServer;
