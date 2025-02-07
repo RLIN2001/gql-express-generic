@@ -9,11 +9,23 @@ async function createGraphQLServer(app) {
 	const server = new ApolloServer({
 		typeDefs,
 		resolvers,
+		context: async ({ req, res }) => {
+			return { req, res };
+		},
 	});
 
 	await server.start();
 
-	app.use("/graphql", cors(), bodyParser.json(), expressMiddleware(server));
+	app.use(
+		"/graphql",
+		cors({
+			origin: "*",
+		}),
+		bodyParser.json(),
+		expressMiddleware(server, {
+			context: async ({ req, res }) => ({ req, res }),
+		})
+	);
 }
 
 module.exports = createGraphQLServer;

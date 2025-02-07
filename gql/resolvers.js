@@ -8,7 +8,14 @@ const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Project = require("../models/Project");
 const { mockData } = require("../mockData");
+const bcryptjs = require("bcryptjs");
 
+let users = [
+	{
+		username: "user",
+		password: "password",
+	}, // password: "password123"
+];
 const getEntityClass = (entity) => {
 	const modelName = entity;
 
@@ -32,7 +39,13 @@ const resolvers = {
 
 	Query: {
 		hello: () => "Hello, world!",
-
+		getUser: (_, __, { req }) => {
+			const user = req.session.user;
+			if (!user) {
+				throw new Error("Not authenticated");
+			}
+			return user;
+		},
 		getEntityData: (_, { entity }) => {
 			getEntityClass(entity);
 			return {
@@ -57,6 +70,36 @@ const resolvers = {
 		},
 	},
 	Mutation: {
+		login: async (_, { username, password }, { req }) => {
+			const user = users.find((user) => user.username === username);
+
+			if (!user) {
+				throw new Error("User not found");
+			}
+
+			const isValidPassword = user.password === password;
+			if (!isValidPassword) {
+				throw new Error("Invalid password");
+			}
+
+			req.session.user = user;
+
+			return "Login successful";
+		},
+
+		register: async (_, { username, password }) => {
+			users.push({ username, password });
+			return "Register successful";
+		},
+
+		logout: (_, __, { req }) => {
+			req.session.destroy((err) => {
+				if (err) {
+					throw new Error("Error while logging out");
+				}
+			});
+			return "Logout successful";
+		},
 		deleteEntityById: (_, { entity, id }) => {
 			getEntityClass(entity);
 
