@@ -3,33 +3,19 @@ const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-
-const typeDefs = `
-  type Query {
-    hello: String
-  }
-`;
-
-const resolvers = {
-	Query: {
-		hello: () => "Ciao dal server GraphQL!",
-	},
-};
+const createGraphQLServer = require("./gql/server");
 
 async function startServer() {
 	const app = express();
 
-	const server = new ApolloServer({
-		typeDefs,
-		resolvers,
+	await createGraphQLServer(app);
+
+	app.get("/", (req, res) => {
+		res.send("Starts Api!");
 	});
 
-	await server.start();
-
-	app.use("/graphql", cors(), bodyParser.json(), expressMiddleware(server));
-
-	app.listen(4000, () => {
-		console.log("Server in ascolto su http://localhost:4000/graphql");
+	app.listen(3000, () => {
+		console.log("Server listen on http://localhost:3000");
 	});
 }
 
